@@ -67,7 +67,7 @@ section { background: var(--panel); border: 1px solid var(--border); border-radi
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: #0b1020;
+  background: var(--card);
   color: var(--text);
 }
 .settings .hint { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
