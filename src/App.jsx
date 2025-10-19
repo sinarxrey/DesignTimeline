@@ -269,7 +269,7 @@ function App() {
         .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fff; }
         .label { color: #555; font-size: 12px; margin-bottom: 4px; }
         .value { font-size: 16px; font-weight: 700; }
-        @media print { body { padding: 0; } }
+        @media print { body { padding: 0; } .no-print { display: none; } }</content>
       </style>
       </head><body>
         <div class="print-title">Design Timeline${projectName ? `<br>${escapeHtml(projectName)}` : ''}</div>
@@ -284,10 +284,7 @@ function App() {
             <div class="label">Est. Page Time</div>
             <div class="value">${hoursPerPage.toFixed(1)} Hour / Page</div>
           </div>
-          <div class="card">
-            <div class="label">Your Role</div>
-            <div class="value">${escapeHtml(roleLabel)}</div>
-          </div>
+          
           <div class="card">
             <div class="label">Total hours</div>
             <div class="value">${totals.totalHours.toFixed(2)} h</div>
@@ -546,6 +543,7 @@ function App() {
                     value={hoursPerDay}
                     onChange={e => setHoursPerDay(Number(e.target.value))}
                   />
+                  <span className="hint">Office Hour</span>
                 </label>
               </div>
 
