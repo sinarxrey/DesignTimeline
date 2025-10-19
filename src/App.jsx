@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import './App.css';
 import 'iconify-icon';
 
@@ -10,6 +10,7 @@ const ROLE_PRESETS = {
 
 function App() {
   const [items, setItems] = useState([]);
+  const [projectName, setProjectName] = useState('');
 
   const [complexityMultipliers, setComplexityMultipliers] = useState({
     normal: 0.5,
@@ -256,10 +257,9 @@ function App() {
 
     const roleLabel = role[0].toUpperCase() + role.slice(1);
 
-    const html = `<!doctype html><html><head><meta charset="utf-8">
-      <title>Design Timeline Summary</title>
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${projectName ? `${escapeHtml(projectName)} - Design Timeline` : 'Design Timeline'}</title>
       <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111; background: #fff; padding: 24px; }
+        body { font-family: 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111; background: #fff; padding: 24px; }
         h1 { margin: 0 0 12px; font-size: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
@@ -272,11 +272,7 @@ function App() {
         @media print { body { padding: 0; } }
       </style>
       </head><body>
-        <h1>Design Timeline Summary</h1>
-        <div class="card">
-          <div class="label">Role preset</div>
-          <div class="value">${roleLabel} — ${pageTimeDays} d/page (${hoursPerPage.toFixed(1)} h/page)</div>
-        </div>
+        <div class="print-title">Design Timeline${projectName ? `<br>${escapeHtml(projectName)}` : ''}</div>
         <table>
           <thead>
             <tr><th>Type</th><th>Name</th><th>Est. Screen</th><th>Complexity</th><th>Est. Duration (Days)</th></tr>
@@ -284,6 +280,14 @@ function App() {
           <tbody>${rowsHtml}</tbody>
         </table>
         <div class="summary">
+          <div class="card">
+            <div class="label">Est. Page Time</div>
+            <div class="value">${hoursPerPage.toFixed(1)} Hour / Page</div>
+          </div>
+          <div class="card">
+            <div class="label">Your Role</div>
+            <div class="value">${escapeHtml(roleLabel)}</div>
+          </div>
           <div class="card">
             <div class="label">Total hours</div>
             <div class="value">${totals.totalHours.toFixed(2)} h</div>
@@ -311,22 +315,48 @@ function App() {
 
   function confirmReset() {
     setItems([]);
+    setProjectName('');
     setCollapsedMainIds({});
     setPendingFocusId(null);
     setResetConfirmOpen(false);
   }
 
   let currentMainCollapsed = false;
+  
+  // Reference for the Add Main Page button
+  const addMainPageButtonRef = useRef(null);
+
+  // Handle tab key in project name input
+  const handleProjectInputKeyDown = (e) => {
+    if (e.key === 'Tab' && !e.shiftKey) {
+      e.preventDefault(); // Prevent default tab behavior
+      addMainPageButtonRef.current?.focus();
+    }
+  };
 
   return (
     <div className="container">
       <header className="page-header">
         <div className="title">
-          <h1>Design Timeline Calculator</h1>
-          <p>Row formula: (estScreens + complexity) × pageTime</p>
+          <h1>Design Timeline</h1>
+          <input
+            type="text"
+            placeholder="Enter project name..."
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            className="project-name-input"
+            aria-label="Project name"
+            autoFocus
+            onKeyDown={handleProjectInputKeyDown}
+          />
         </div>
         <div className="header-actions">
-          <button className="icon-button" onClick={() => setSettingsOpen(true)} aria-label="Settings" title="Settings">
+          <button 
+            className="icon-button" 
+            onClick={() => setSettingsOpen(true)} 
+            aria-label="Settings" 
+            title="Settings"
+          >
             <iconify-icon icon="ri:settings-3-line" width="18" height="18"></iconify-icon>
           </button>
           <button className="icon-button" onClick={handlePrint} aria-label="Print summary" title="Print summary">
@@ -340,9 +370,14 @@ function App() {
 
       <section className="items">
         <div className="section-titlebar">
-          <h2>Screens / Pages</h2>
+          <h3>Screens / Pages</h3>
           <div className="section-actions">
-            <button onClick={() => addItem('Main')} aria-label="Add Main Page" title="Add Main Page">+ 📄</button>
+            <button 
+              onClick={() => addItem('Main')} 
+              aria-label="Add Main Page" 
+              title="Add Main Page"
+              ref={addMainPageButtonRef}
+            >+ 📄</button>
           </div>
         </div>
 
@@ -397,7 +432,7 @@ function App() {
                   </select>
                 </div>
                 <div>
-                  <div className="calc-value">{(row?.days ?? 0).toFixed(2)}</div>
+                  <div className="calc-value">{(row?.days ?? 0).toFixed(1)}</div>
                 </div>
                 <div>
                   <div className="row-actions">
@@ -429,30 +464,28 @@ function App() {
       </section>
 
       <section className="summary">
-        <h2>Results</h2>
+        <h3>Results</h3>
         <div className="cards">
           <div className="card">
-            <div className="label">Role preset</div>
-            <div className="value" style={{ fontSize: 16 }}>
-              {role[0].toUpperCase() + role.slice(1)} — {pageTimeDays} d/page ({hoursPerPage.toFixed(1)} h/page)
+            <div className="label">Est. Page Time</div>
+            <div className="value">
+              {hoursPerPage.toFixed(1)} Hour / Page
             </div>
           </div>
           <div className="card">
             <div className="label">Total hours</div>
-            <div className="value">{totals.totalHours.toFixed(2)} h</div>
+            <div className="value">{totals.totalHours.toFixed(1)}</div>
           </div>
           <div className="card">
             <div className="label">Total days</div>
-            <div className="value">{totals.totalDays.toFixed(2)} d</div>
+            <div className="value">{totals.totalDays.toFixed(1)}</div>
           </div>
         </div>
-        <p className="note">
-          Page time is in days per page. Hours per page = page time × hours per day.
-        </p>
       </section>
 
       <footer>
-        <small>Adjust inputs to fit your team and context.</small>
+        <small>Built to tackle those little challenges that make a big difference for your team.</small>
+        <div className="trademark">Created by sinarxrey</div>
       </footer>
 
       {settingsOpen && (

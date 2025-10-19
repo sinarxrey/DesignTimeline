@@ -19,7 +19,7 @@
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
   background: var(--bg);
   color: var(--text);
 }
@@ -35,9 +35,29 @@ body {
 .page-header h1 { margin: 0 0 6px; }
 .page-header p { margin: 0 0 16px; color: var(--muted); }
 
-.header-actions { display: flex; gap: 16px; flex: 1; justify-content: flex-end; }
+.header-actions { display: flex; gap: 16px; flex: 1; justify-content: flex-end; align-items: center; }
 
-section { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
+.project-name-input {
+  width: 200px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.project-name-input::placeholder {
+  color: var(--muted);
+}
+
+.project-name-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, white 40%);
+  outline-offset: 2px;
+}
+
+section { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px; margin-top: 16px; }
 
 .settings .grid,
 .settings .grid label {
@@ -47,6 +67,17 @@ section { background: var(--panel); border: 1px solid var(--border); border-radi
 }
 .settings .grid label {
   grid-template-columns: 1fr;
+}
+
+.trademark {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+footer {
+  text-align: left;
 }
 
 /* 3 equal columns for complexity controls */
@@ -274,7 +305,7 @@ button:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, 
 
 .note { color: var(--muted); margin-top: 12px; }
 
-footer { margin-top: 16px; color: var(--muted); text-align: center; }
+footer { margin-top: 64px; color: var(--muted); text-align: center; }
 
 /* Modal */
 .modal-backdrop {
