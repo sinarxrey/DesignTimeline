@@ -365,6 +365,26 @@ function App() {
         </div>
       </header>
 
+      <section className="summary">
+        <h3>Results</h3>
+        <div className="cards">
+          <div className="card">
+            <div className="label">Est. Page Time</div>
+            <div className="value">
+              {hoursPerPage.toFixed(1)} Hour / Page
+            </div>
+          </div>
+          <div className="card">
+            <div className="label">Total hours</div>
+            <div className="value">{totals.totalHours.toFixed(1)}</div>
+          </div>
+          <div className="card">
+            <div className="label">Total days</div>
+            <div className="value">{totals.totalDays.toFixed(1)}</div>
+          </div>
+        </div>
+      </section>
+
       <section className="items">
         <div className="section-titlebar">
           <h3>Screens / Pages</h3>
@@ -457,26 +477,6 @@ function App() {
               </div>
             );
           })}
-        </div>
-      </section>
-
-      <section className="summary">
-        <h3>Results</h3>
-        <div className="cards">
-          <div className="card">
-            <div className="label">Est. Page Time</div>
-            <div className="value">
-              {hoursPerPage.toFixed(1)} Hour / Page
-            </div>
-          </div>
-          <div className="card">
-            <div className="label">Total hours</div>
-            <div className="value">{totals.totalHours.toFixed(1)}</div>
-          </div>
-          <div className="card">
-            <div className="label">Total days</div>
-            <div className="value">{totals.totalDays.toFixed(1)}</div>
-          </div>
         </div>
       </section>
 
