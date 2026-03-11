@@ -31,6 +31,7 @@ function App() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [tempProjectName, setTempProjectName] = useState('');
   const [tempRole, setTempRole] = useState('middle');
+  const [projectNameError, setProjectNameError] = useState(false);
 
   // #region agent log
   useEffect(() => {
@@ -333,12 +334,15 @@ function App() {
 
   // Onboarding handlers
   function handleStartProject() {
-    if (tempProjectName.trim()) {
-      setProjectName(tempProjectName);
-      setRole(tempRole);
-      setPageTimeDays(ROLE_PRESETS[tempRole]);
-      setShowOnboarding(false);
+    if (!tempProjectName.trim()) {
+      setProjectNameError(true);
+      return;
     }
+    setProjectNameError(false);
+    setProjectName(tempProjectName);
+    setRole(tempRole);
+    setPageTimeDays(ROLE_PRESETS[tempRole]);
+    setShowOnboarding(false);
   }
 
   function handleEditProject() {
@@ -382,10 +386,17 @@ function App() {
                 type="text"
                 placeholder="Enter project name..."
                 value={tempProjectName}
-                onChange={(e) => setTempProjectName(e.target.value)}
+                onChange={(e) => {
+                  setTempProjectName(e.target.value);
+                  if (projectNameError) setProjectNameError(false);
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleStartProject()}
+                className={projectNameError ? 'error' : ''}
                 autoFocus
               />
+              {projectNameError && (
+                <span className="error-message">Project need to fill before start</span>
+              )}
             </label>
 
             <h3>Role presets</h3>

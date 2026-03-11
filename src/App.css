@@ -707,6 +707,19 @@ section h3,
   color: var(--text-tertiary);
 }
 
+.onboarding-card input[type="text"].error {
+  border-color: var(--danger);
+  box-shadow: inset 0 0 0 2px var(--danger);
+}
+
+.error-message {
+  display: block;
+  color: #ff6b6b !important;
+  font-size: 13px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
 .onboarding-card h3 {
   margin: 32px 0 20px 0;
   font-size: 16px;
