@@ -378,7 +378,7 @@ function App() {
         <div className="onboarding-container">
           <div className="onboarding-card">
             <div className="onboarding-header">
-              <h1>Project Setup</h1>
+              <h1>Design Timeline Platform</h1>
             </div>
 
             <label style={{ display: 'block', marginBottom: '20px' }}>
