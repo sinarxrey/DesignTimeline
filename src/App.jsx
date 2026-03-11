@@ -524,7 +524,10 @@ function App() {
               aria-label="Add Main Page" 
               title="Add Main Page"
               ref={addMainPageButtonRef}
-            >+ 📄</button>
+            >
+              <iconify-icon icon="ri:add-circle-line" width="18" height="18" style={{ marginRight: '6px' }}></iconify-icon>
+              New Page
+            </button>
           </div>
         </div>
 
@@ -537,6 +540,13 @@ function App() {
             <div>Est. Duration (Days)</div>
             <div></div>
           </div>
+          {items.length === 0 && (
+            <div className="empty-state-placeholder">
+              <iconify-icon icon="ri:file-add-line" width="48" height="48" className="placeholder-icon"></iconify-icon>
+              <p>Start by adding pages to calculate your design timeline</p>
+              <span className="placeholder-hint">Click "New Page" above to add Main or Sub Pages, then fill in details</span>
+            </div>
+          )}
           {items.map((item, idx) => {
             if (item.type === 'Main') {
               currentMainCollapsed = isMainCollapsed(item.id);

@@ -677,6 +677,36 @@ section h3,
   font-size: 14px;
 }
 
+/* Empty state placeholder for items section */
+.empty-state-placeholder {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--border);
+}
+
+.empty-state-placeholder .placeholder-icon {
+  display: block;
+  margin: 0 auto 16px;
+  opacity: 0.4;
+  color: var(--text-tertiary);
+}
+
+.empty-state-placeholder p {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.empty-state-placeholder .placeholder-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 /* Onboarding - Centered Page (no modal/popup, no boundaries) */
 .onboarding-container {
   min-height: calc(100vh - 160px);
