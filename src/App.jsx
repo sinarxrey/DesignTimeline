@@ -25,6 +25,22 @@ function App() {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [collapsedMainIds, setCollapsedMainIds] = useState({});
   const [pendingFocusId, setPendingFocusId] = useState(null);
+  
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [tempProjectName, setTempProjectName] = useState('');
+  const [tempRole, setTempRole] = useState('middle');
+
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7553/ingest/8530902c-766f-4cb5-a54b-5f9db023ecef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ea1518'},body:JSON.stringify({sessionId:'ea1518',location:'App.jsx:34',message:'App mounted with onboarding state',data:{showOnboarding,tempProjectName,tempRole,projectName},timestamp:Date.now()})}).catch(()=>{});
+  }, []);
+  
+  useEffect(() => {
+    fetch('http://127.0.0.1:7553/ingest/8530902c-766f-4cb5-a54b-5f9db023ecef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ea1518'},body:JSON.stringify({sessionId:'ea1518',location:'App.jsx:38',message:'Onboarding modal render check',data:{showOnboarding,hasProjectName: !!tempProjectName},timestamp:Date.now()})}).catch(()=>{});
+  }, [showOnboarding, tempProjectName]);
+  // #endregion
 
   useEffect(() => {
     if (!pendingFocusId) return;
@@ -255,21 +271,21 @@ function App() {
       </tr>`;
     }).join('');
 
-    const roleLabel = role[0].toUpperCase() + role.slice(1);
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${projectName ? `${escapeHtml(projectName)} - Design Timeline` : 'Design Timeline'}</title>
       <style>
-        body { font-family: 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #111; background: #fff; padding: 24px; }
-        h1 { margin: 0 0 12px; font-size: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
-        th { background: #f5f5f5; text-align: left; }
+        body { font-family: 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #212529; background: #fff; padding: 32px; }
+        h1 { margin: 0 0 16px; font-size: 24px; font-weight: 600; color: #212529; }
+        .print-title { margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border: 1px solid #e9ecef; padding: 12px; font-size: 13px; }
+        th { background: #f8f9fa; text-align: left; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
         tfoot td { font-weight: 600; }
-        .summary { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-        .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fff; }
-        .label { color: #555; font-size: 12px; margin-bottom: 4px; }
-        .value { font-size: 16px; font-weight: 700; }
-        @media print { body { padding: 0; } .no-print { display: none; } }</content>
+        .print-summary { margin-top: 24px; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+        .print-summary .label { color: #6c757d; font-weight: 500; }
+        .print-summary .stat { font-weight: 600; color: #212529; }
+        .print-summary .sep { color: #adb5bd; }
+        @media print { body { padding: 0; } .no-print { display: none; } }
       </style>
       </head><body>
         <div class="print-title">Design Timeline${projectName ? `<br>${escapeHtml(projectName)}` : ''}</div>
@@ -279,20 +295,13 @@ function App() {
           </thead>
           <tbody>${rowsHtml}</tbody>
         </table>
-        <div class="summary">
-          <div class="card">
-            <div class="label">Est. Page Time</div>
-            <div class="value">${hoursPerPage.toFixed(1)} Hour / Page</div>
-          </div>
-          
-          <div class="card">
-            <div class="label">Total hours</div>
-            <div class="value">${totals.totalHours.toFixed(2)} h</div>
-          </div>
-          <div class="card">
-            <div class="label">Total days</div>
-            <div class="value">${totals.totalDays.toFixed(2)} d</div>
-          </div>
+        <div class="print-summary">
+          <span class="label">Summary</span>
+          <span class="stat">${hoursPerPage.toFixed(1)} h/page</span>
+          <span class="sep">•</span>
+          <span class="stat">${totals.totalHours.toFixed(1)} h</span>
+          <span class="sep">•</span>
+          <span class="stat">${totals.totalDays.toFixed(1)} d</span>
         </div>
       </body></html>`;
 
@@ -316,6 +325,32 @@ function App() {
     setCollapsedMainIds({});
     setPendingFocusId(null);
     setResetConfirmOpen(false);
+    setShowEditModal(false);
+    setTempProjectName('');
+    setTempRole('middle');
+    setShowOnboarding(true);
+  }
+
+  // Onboarding handlers
+  function handleStartProject() {
+    if (tempProjectName.trim()) {
+      setProjectName(tempProjectName);
+      setRole(tempRole);
+      setPageTimeDays(ROLE_PRESETS[tempRole]);
+      setShowOnboarding(false);
+    }
+  }
+
+  function handleEditProject() {
+    setTempProjectName(projectName);
+    setShowEditModal(true);
+  }
+
+  function handleSaveEdit() {
+    if (tempProjectName.trim()) {
+      setProjectName(tempProjectName);
+      setShowEditModal(false);
+    }
   }
 
   let currentMainCollapsed = false;
@@ -333,19 +368,110 @@ function App() {
 
   return (
     <div className="container">
+      {/* Onboarding - Centered Page */}
+      {showOnboarding && (
+        <div className="onboarding-container">
+          <div className="onboarding-card">
+            <div className="onboarding-header">
+              <h1>Project Setup</h1>
+            </div>
+
+            <label style={{ display: 'block', marginBottom: '20px' }}>
+              <span style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Project Name</span>
+              <input
+                type="text"
+                placeholder="Enter project name..."
+                value={tempProjectName}
+                onChange={(e) => setTempProjectName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleStartProject()}
+                autoFocus
+              />
+            </label>
+
+            <h3>Role presets</h3>
+            <div className="role-grid">
+              <label className={tempRole === 'senior' ? 'selected' : ''} onClick={() => setTempRole('senior')}>
+                <input type="radio" name="tempRole" checked={tempRole === 'senior'} onChange={() => setTempRole('senior')} />
+                <span className="role-emoji" aria-hidden="true">👑</span>
+                <div className="role-text">
+                  <div className="role-title">Senior</div>
+                  <div className="role-subtitle">{(ROLE_PRESETS.senior * hoursPerDay).toFixed(1)} Hour/Page</div>
+                </div>
+              </label>
+              <label className={tempRole === 'middle' ? 'selected' : ''} onClick={() => setTempRole('middle')}>
+                <input type="radio" name="tempRole" checked={tempRole === 'middle'} onChange={() => setTempRole('middle')} />
+                <span className="role-emoji" aria-hidden="true">🧰</span>
+                <div className="role-text">
+                  <div className="role-title">Middle</div>
+                  <div className="role-subtitle">{(ROLE_PRESETS.middle * hoursPerDay).toFixed(1)} Hour/Page</div>
+                </div>
+              </label>
+              <label className={tempRole === 'junior' ? 'selected' : ''} onClick={() => setTempRole('junior')}>
+                <input type="radio" name="tempRole" checked={tempRole === 'junior'} onChange={() => setTempRole('junior')} />
+                <span className="role-emoji" aria-hidden="true">🎓</span>
+                <div className="role-text">
+                  <div className="role-title">Junior</div>
+                  <div className="role-subtitle">{(ROLE_PRESETS.junior * hoursPerDay).toFixed(1)} Hour/Page</div>
+                </div>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px' }}>
+              <button onClick={handleStartProject}>Start</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Project Name Modal */}
+      {showEditModal && (
+        <div className="modal-backdrop" onClick={() => setShowEditModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-titlebar">
+                <h2>Edit Project Name</h2>
+                <button className="icon-button" onClick={() => setShowEditModal(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
+              </div>
+
+              <label style={{ display: 'block', marginBottom: '20px' }}>
+                <span style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Project Name</span>
+                <input
+                  type="text"
+                  placeholder="Enter project name..."
+                  value={tempProjectName}
+                  onChange={(e) => setTempProjectName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                  autoFocus
+                />
+              </label>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button className="danger" onClick={() => setShowEditModal(false)}>Cancel</button>
+                <button onClick={handleSaveEdit}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - Only show after onboarding */}
+      {!showOnboarding && (
+        <>
       <header className="page-header">
         <div className="title">
           <h1>Design Timeline</h1>
-          <input
-            type="text"
-            placeholder="Enter project name..."
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            className="project-name-input"
-            aria-label="Project name"
-            autoFocus
-            onKeyDown={handleProjectInputKeyDown}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="project-name-display">{projectName}</span>
+            <button 
+              className="icon-button" 
+              onClick={handleEditProject}
+              aria-label="Edit project name"
+              title="Edit project name"
+              style={{ height: '32px', width: '32px', padding: 0 }}
+            >
+              <iconify-icon icon="ri:pencil-line" width="16" height="16"></iconify-icon>
+            </button>
+          </div>
         </div>
         <div className="header-actions">
           <button 
@@ -365,24 +491,13 @@ function App() {
         </div>
       </header>
 
-      <section className="summary">
-        <h3>Results</h3>
-        <div className="cards">
-          <div className="card">
-            <div className="label">Est. Page Time</div>
-            <div className="value">
-              {hoursPerPage.toFixed(1)} Hour / Page
-            </div>
-          </div>
-          <div className="card">
-            <div className="label">Total hours</div>
-            <div className="value">{totals.totalHours.toFixed(1)}</div>
-          </div>
-          <div className="card">
-            <div className="label">Total days</div>
-            <div className="value">{totals.totalDays.toFixed(1)}</div>
-          </div>
-        </div>
+      <section className="summary summary--compact">
+        <span className="summary-label">Summary</span>
+        <span className="summary-stat">{hoursPerPage.toFixed(1)} Hour/page</span>
+        <span className="summary-sep" aria-hidden>•</span>
+        <span className="summary-stat">{totals.totalHours.toFixed(1)} Hour</span>
+        <span className="summary-sep" aria-hidden>•</span>
+        <span className="summary-stat">{totals.totalDays.toFixed(1)} Day</span>
       </section>
 
       <section className="items">
@@ -488,10 +603,10 @@ function App() {
       {settingsOpen && (
         <div className="modal-backdrop" onClick={() => setSettingsOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <section className="settings">
+            <div className="modal-content">
               <div className="modal-titlebar">
                 <h2>Settings</h2>
-                <button className="icon-button" onClick={() => setSettingsOpen(false)}>Close</button>
+                <button className="icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
               </div>
 
               <h3>Role presets</h3>
@@ -580,7 +695,7 @@ function App() {
                   />
                 </label>
               </div>
-            </section>
+            </div>
           </div>
         </div>
       )}
@@ -588,10 +703,10 @@ function App() {
       {resetConfirmOpen && (
         <div className="modal-backdrop" onClick={() => setResetConfirmOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <section className="settings">
+            <div className="modal-content">
               <div className="modal-titlebar">
                 <h2>Confirm Reset</h2>
-                <button className="icon-button" onClick={() => setResetConfirmOpen(false)}>Close</button>
+                <button className="icon-button" onClick={() => setResetConfirmOpen(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
               </div>
               
               <p style={{ margin: '16px 0', fontSize: '14px', lineHeight: '1.5' }}>
@@ -602,10 +717,12 @@ function App() {
                 <button onClick={() => setResetConfirmOpen(false)}>Cancel</button>
                 <button className="danger" onClick={confirmReset}>Reset All</button>
               </div>
-            </section>
+            </div>
           </div>
         </div>
       )}
+      </>
+    )}
     </div>
   );
 }
