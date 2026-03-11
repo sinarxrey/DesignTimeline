@@ -146,6 +146,7 @@ section.summary.summary--compact {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  row-gap: 0px;
 }
 .settings .grid label,
 .modal-content .grid label {
@@ -212,7 +213,7 @@ section.summary.summary--compact {
   color: var(--text-tertiary);
 }
 .settings .hint,
-.modal-content .hint { display: block; color: var(--text-secondary); font-size: 13px; margin-top: 6px; }
+.modal-content .hint { display: block; color: var(--text-secondary); font-size: 13px; margin-top: 6px; height: fit-content; }
 
 /* Additional micro-interactions */
 button:active {
@@ -283,17 +284,21 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-md);
   background: var(--bg-secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
   min-height: 72px;
+  border: 2px solid transparent;
 }
 
 .role-grid label:hover {
   background: var(--bg-tertiary);
+  transform: translateY(-2px);
 }
 
 .role-grid label.selected {
-  background: var(--bg-tertiary);
+  background: rgba(77, 171, 247, 0.15);
+  border: 2px solid var(--accent);
+  transform: translateY(-2px);
 }
 
 .role-grid input[type="radio"] {
@@ -333,28 +338,42 @@ button {
   color: white;
   border: none;
   border-radius: var(--radius-md);
-  height: 38px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 20px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  letter-spacing: 0.2px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 button.success { background: var(--success); }
-button.danger { background: var(--danger); }
+button.danger { 
+  background: var(--danger);
+  color: white;
+}
 button:hover { 
   background: var(--accent-hover); 
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
-button.success:hover { background: var(--success-hover); }
-button.danger:hover { background: var(--danger-hover); }
+button.success:hover { background: #37b24d; }
+button.danger:hover { 
+  background: #e03131;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
 button:focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring), var(--shadow-sm);
+  box-shadow: var(--focus-ring), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
 }
 
 .icon-button {
@@ -587,7 +606,7 @@ footer .trademark {
 /* Section headings hierarchy */
 section h3,
 .modal-content h3 {
-  margin: 0 0 16px 0;
+  margin: 16px 0 16px 0;
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);

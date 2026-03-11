@@ -3,9 +3,9 @@ import './App.css';
 import 'iconify-icon';
 
 const ROLE_PRESETS = {
-  senior: 0.2, // days per page
-  middle: 0.3,
-  junior: 0.4,
+  senior: 1.6, // hours per page
+  middle: 2.4,
+  junior: 3.2,
 };
 
 function App() {
@@ -19,7 +19,7 @@ function App() {
   });
 
   const [role, setRole] = useState('middle');
-  const [pageTimeDays, setPageTimeDays] = useState(ROLE_PRESETS['middle']);
+  const [hoursPerPage, setHoursPerPage] = useState(ROLE_PRESETS['middle']);
   const [hoursPerDay, setHoursPerDay] = useState(8);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -61,7 +61,7 @@ function App() {
   }, [settingsOpen]);
 
   // Derived
-  const hoursPerPage = useMemo(() => pageTimeDays * Number(hoursPerDay || 0), [pageTimeDays, hoursPerDay]);
+  const pageTimeDays = useMemo(() => Number(hoursPerPage || 0) / Number(hoursPerDay || 8), [hoursPerPage, hoursPerDay]);
 
   function toggleMainCollapse(mainId) {
     setCollapsedMainIds(prev => ({ ...prev, [mainId]: !prev[mainId] }));
@@ -73,10 +73,11 @@ function App() {
   const rowDurations = useMemo(() => {
     return items.map(i => {
       const mult = complexityMultipliers[i.complexity] ?? 1;
-      const days = (Number(i.estScreens || 0) + Number(mult || 0)) * Number(pageTimeDays || 0);
+      const hours = (Number(i.estScreens || 0) + Number(mult || 0)) * Number(hoursPerPage || 0);
+      const days = hours / Number(hoursPerDay || 8);
       return { id: i.id, days };
     });
-  }, [items, complexityMultipliers, pageTimeDays]);
+  }, [items, complexityMultipliers, hoursPerPage, hoursPerDay]);
 
   const totals = useMemo(() => {
     const totalDays = rowDurations.reduce((s, r) => s + r.days, 0);
@@ -84,10 +85,10 @@ function App() {
     return { totalDays, totalHours };
   }, [rowDurations, hoursPerDay]);
 
-  // Helper: check if current pageTimeDays matches a given role preset
+  // Helper: check if current hoursPerPage matches a given role preset
   function roleMatchesPreset(r) {
     const preset = ROLE_PRESETS[r];
-    return Math.abs(Number(pageTimeDays) - Number(preset)) < 1e-6;
+    return Math.abs(Number(hoursPerPage) - Number(preset)) < 1e-6;
   }
 
   function addItem(type) {
@@ -248,7 +249,7 @@ function App() {
 
   function handleRoleChange(newRole) {
     setRole(newRole);
-    setPageTimeDays(ROLE_PRESETS[newRole]);
+    setHoursPerPage(ROLE_PRESETS[newRole]);
   }
 
   function handlePrint() {
@@ -341,7 +342,7 @@ function App() {
     setProjectNameError(false);
     setProjectName(tempProjectName);
     setRole(tempRole);
-    setPageTimeDays(ROLE_PRESETS[tempRole]);
+    setHoursPerPage(ROLE_PRESETS[tempRole]);
     setShowOnboarding(false);
   }
 
@@ -399,14 +400,17 @@ function App() {
               )}
             </label>
 
-            <h3>Role presets</h3>
+            <div className="role-presets-header">
+              <h3 style={{ margin: 0 }}>Role presets</h3>
+              <p className="hint" style={{ margin: '4px 0 8px 0', fontSize: '13px', color: '#6b7280' }}>This selection and number can change later</p>
+            </div>
             <div className="role-grid">
               <label className={tempRole === 'senior' ? 'selected' : ''} onClick={() => setTempRole('senior')}>
                 <input type="radio" name="tempRole" checked={tempRole === 'senior'} onChange={() => setTempRole('senior')} />
                 <span className="role-emoji" aria-hidden="true">👑</span>
                 <div className="role-text">
                   <div className="role-title">Senior</div>
-                  <div className="role-subtitle">{(ROLE_PRESETS.senior * hoursPerDay).toFixed(1)} Hour/Page</div>
+                  <div className="role-subtitle">{ROLE_PRESETS.senior.toFixed(1)} Hour/Page</div>
                 </div>
               </label>
               <label className={tempRole === 'middle' ? 'selected' : ''} onClick={() => setTempRole('middle')}>
@@ -414,7 +418,7 @@ function App() {
                 <span className="role-emoji" aria-hidden="true">🧰</span>
                 <div className="role-text">
                   <div className="role-title">Middle</div>
-                  <div className="role-subtitle">{(ROLE_PRESETS.middle * hoursPerDay).toFixed(1)} Hour/Page</div>
+                  <div className="role-subtitle">{ROLE_PRESETS.middle.toFixed(1)} Hour/Page</div>
                 </div>
               </label>
               <label className={tempRole === 'junior' ? 'selected' : ''} onClick={() => setTempRole('junior')}>
@@ -422,7 +426,7 @@ function App() {
                 <span className="role-emoji" aria-hidden="true">🎓</span>
                 <div className="role-text">
                   <div className="role-title">Junior</div>
-                  <div className="role-subtitle">{(ROLE_PRESETS.junior * hoursPerDay).toFixed(1)} Hour/Page</div>
+                  <div className="role-subtitle">{ROLE_PRESETS.junior.toFixed(1)} Hour/Page</div>
                 </div>
               </label>
             </div>
@@ -620,14 +624,16 @@ function App() {
                 <button className="icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
               </div>
 
-              <h3>Role presets</h3>
+              <div className="role-presets-header">
+                <h3 style={{ margin: 0 }}>Role presets</h3>
+              </div>
               <div className="role-grid">
                 <label className={role === 'senior' && roleMatchesPreset('senior') ? 'selected' : ''} onClick={() => handleRoleChange('senior')}>
                   <input type="radio" name="role" checked={role === 'senior'} onChange={() => handleRoleChange('senior')} />
                   <span className="role-emoji" aria-hidden="true">👑</span>
                   <div className="role-text">
                     <div className="role-title">Senior</div>
-                    <div className="role-subtitle">{(ROLE_PRESETS.senior * hoursPerDay).toFixed(1)} Hour/Page</div>
+                    <div className="role-subtitle">{ROLE_PRESETS.senior.toFixed(1)} Hour/Page</div>
                   </div>
                 </label>
                 <label className={role === 'middle' && roleMatchesPreset('middle') ? 'selected' : ''} onClick={() => handleRoleChange('middle')}>
@@ -635,7 +641,7 @@ function App() {
                   <span className="role-emoji" aria-hidden="true">🧰</span>
                   <div className="role-text">
                     <div className="role-title">Middle</div>
-                    <div className="role-subtitle">{(ROLE_PRESETS.middle * hoursPerDay).toFixed(1)} Hour/Page</div>
+                    <div className="role-subtitle">{ROLE_PRESETS.middle.toFixed(1)} Hour/Page</div>
                   </div>
                 </label>
                 <label className={role === 'junior' && roleMatchesPreset('junior') ? 'selected' : ''} onClick={() => handleRoleChange('junior')}>
@@ -643,22 +649,22 @@ function App() {
                   <span className="role-emoji" aria-hidden="true">🎓</span>
                   <div className="role-text">
                     <div className="role-title">Junior</div>
-                    <div className="role-subtitle">{(ROLE_PRESETS.junior * hoursPerDay).toFixed(1)} Hour/Page</div>
+                    <div className="role-subtitle">{ROLE_PRESETS.junior.toFixed(1)} Hour/Page</div>
                   </div>
                 </label>
               </div>
 
               <div className="grid" style={{ marginTop: 12 }}>
                 <label>
-                  Page time (days per page)
+                  Hours per page
                   <input
                     type="number"
-                    step="0.05"
+                    step="0.1"
                     min="0"
-                    value={pageTimeDays}
-                    onChange={e => setPageTimeDays(Number(e.target.value))}
+                    value={hoursPerPage}
+                    onChange={e => setHoursPerPage(Number(e.target.value))}
                   />
-                  <span className="hint">Derived hours per page: {hoursPerPage.toFixed(1)} h</span>
+                  <span className="hint" style={{ marginTop: '4px' }}>Time to design one page</span>
                 </label>
                 <label>
                   Hours per workday
@@ -669,7 +675,7 @@ function App() {
                     value={hoursPerDay}
                     onChange={e => setHoursPerDay(Number(e.target.value))}
                   />
-                  <span className="hint">Office Hour</span>
+                  <span className="hint" style={{ marginTop: '4px' }}>Office Hour</span>
                 </label>
               </div>
 
