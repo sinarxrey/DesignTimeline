@@ -378,7 +378,7 @@ function App() {
         <div className="onboarding-container">
           <div className="onboarding-card">
             <div className="onboarding-header">
-              <h1>Calculate your design timeline</h1>
+              <h1>Design Timeline Calculator</h1>
             </div>
 
             <label style={{ display: 'block', marginBottom: '20px' }}>
