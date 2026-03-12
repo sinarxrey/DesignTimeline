@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 import './App.css';
 import 'iconify-icon';
 import { saveState, loadState, clearState, exportData, importData, isStorageAvailable, getLastProject } from './utils/storage';
@@ -960,6 +961,7 @@ function App() {
       </>
     )}
     <SpeedInsights />
+    <Analytics />
     </div>
   );
 }
