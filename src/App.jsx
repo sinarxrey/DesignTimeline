@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
+import { X, Pencil, Settings, Printer, RefreshCw, Download, Upload, PlusCircle, FilePlus, Plus, ChevronDown, ChevronUp, Minus, Trash2 } from 'lucide-react';
 import './App.css';
-import 'iconify-icon';
 import { saveState, loadState, clearState, clearAllStorage, exportData, importData, isStorageAvailable, getLastProject } from './utils/storage';
 
 const VISITED_APP_KEY = 'designtimeline-visited-app';
@@ -46,16 +46,6 @@ function App() {
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
   const [showImportModal, setShowImportModal] = useState(false);
   const [importError, setImportError] = useState('');
-
-  // #region agent log
-  useEffect(() => {
-    fetch('http://127.0.0.1:7553/ingest/8530902c-766f-4cb5-a54b-5f9db023ecef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ea1518'},body:JSON.stringify({sessionId:'ea1518',location:'App.jsx:34',message:'App mounted with onboarding state',data:{showOnboarding,tempProjectName,tempRole,projectName},timestamp:Date.now()})}).catch(()=>{});
-  }, []);
-  
-  useEffect(() => {
-    fetch('http://127.0.0.1:7553/ingest/8530902c-766f-4cb5-a54b-5f9db023ecef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ea1518'},body:JSON.stringify({sessionId:'ea1518',location:'App.jsx:38',message:'Onboarding modal render check',data:{showOnboarding,hasProjectName: !!tempProjectName},timestamp:Date.now()})}).catch(()=>{});
-  }, [showOnboarding, tempProjectName]);
-  // #endregion
 
   // Load state on mount (check for existing project data)
   useEffect(() => {
@@ -620,7 +610,7 @@ function App() {
             <div className="modal-content">
               <div className="modal-titlebar">
                 <h2>Edit Project Name</h2>
-                <button className="icon-button" onClick={() => setShowEditModal(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
+                <button className="icon-button" onClick={() => setShowEditModal(false)} aria-label="Close"><X size={20} /></button>
               </div>
 
               <label style={{ display: 'block', marginBottom: '20px' }}>
@@ -651,7 +641,7 @@ function App() {
             <div className="modal-content">
               <div className="modal-titlebar">
                 <h2>Import Backup</h2>
-                <button className="icon-button" onClick={() => setShowImportModal(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
+                <button className="icon-button" onClick={() => setShowImportModal(false)} aria-label="Close"><X size={20} /></button>
               </div>
 
               <label style={{ display: 'block', marginBottom: '20px' }}>
@@ -690,7 +680,7 @@ function App() {
               title="Edit project name"
               style={{ height: '32px', width: '32px', padding: 0 }}
             >
-              <iconify-icon icon="ri:pencil-line" width="16" height="16"></iconify-icon>
+              <Pencil size={16} />
             </button>
           </div>
         </div>
@@ -701,13 +691,13 @@ function App() {
             aria-label="Settings" 
             title="Settings"
           >
-            <iconify-icon icon="ri:settings-3-line" width="18" height="18"></iconify-icon>
+            <Settings size={18} />
           </button>
           <button className="icon-button" onClick={handlePrint} aria-label="Print summary" title="Print summary">
-            <iconify-icon icon="ri:printer-line" width="18" height="18"></iconify-icon>
+            <Printer size={18} />
           </button>
           <button className="icon-button" onClick={handleReset} aria-label="Reset all data" title="Reset all data">
-            <iconify-icon icon="ri:refresh-line" width="18" height="18"></iconify-icon>
+            <RefreshCw size={18} />
           </button>
         </div>
       </header>
@@ -729,7 +719,7 @@ function App() {
             title="Export data as backup"
             disabled={!projectName}
           >
-            <iconify-icon icon="ri:download-cloud-2-line" width="18" height="18"></iconify-icon>
+            <Download size={18} />
           </button>
           <button 
             className="icon-button icon-button--bare" 
@@ -737,7 +727,7 @@ function App() {
             aria-label="Import data" 
             title="Import from backup"
           >
-            <iconify-icon icon="ri:upload-cloud-2-line" width="18" height="18"></iconify-icon>
+            <Upload size={18} />
           </button>
         </div>
       </section>
@@ -752,7 +742,7 @@ function App() {
               title="Add Main Page"
               ref={addMainPageButtonRef}
             >
-              <iconify-icon icon="ri:add-circle-line" width="18" height="18" style={{ marginRight: '6px' }}></iconify-icon>
+              <PlusCircle size={18} style={{ marginRight: '6px' }} />
               New Page
             </button>
           </div>
@@ -769,7 +759,7 @@ function App() {
           </div>
           {items.length === 0 && (
             <div className="empty-state-placeholder">
-              <iconify-icon icon="ri:file-add-line" width="48" height="48" className="placeholder-icon"></iconify-icon>
+              <FilePlus size={48} className="placeholder-icon" />
               <p>Add pages to build your timeline</p>
               <span className="placeholder-hint">Click ‘New Page’ to add main or sub pages, then enter the details.</span>
             </div>
@@ -825,7 +815,7 @@ function App() {
                     {item.type === 'Main' && (
                       <>
                         <button className="success" onClick={() => addChildAfter(item.id)} aria-label="Add sub page" title="Add Sub Page below">
-                          <iconify-icon icon="ri:add-line" width="18" height="18"></iconify-icon>
+                          <Plus size={18} />
                         </button>
                         <button
                           className="icon-button"
@@ -834,12 +824,12 @@ function App() {
                           title={hasChildren ? (isMainCollapsed(item.id) ? 'Expand children' : 'Collapse children') : 'No children'}
                           disabled={!hasChildren}
                         >
-                          <iconify-icon icon={hasChildren ? (isMainCollapsed(item.id) ? 'ri:arrow-down-s-line' : 'ri:arrow-up-s-line') : 'ri:subtract-line'} width="18" height="18"></iconify-icon>
+                          {hasChildren ? (isMainCollapsed(item.id) ? <ChevronDown size={18} /> : <ChevronUp size={18} />) : <Minus size={18} />}
                         </button>
                       </>
                     )}
                     <button className="danger" onClick={() => removeItem(item.id)} aria-label="Remove row" title="Remove">
-                      <iconify-icon icon="ri:delete-bin-line" width="18" height="18"></iconify-icon>
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
@@ -860,7 +850,7 @@ function App() {
             <div className="modal-content">
               <div className="modal-titlebar">
                 <h2>Settings</h2>
-                <button className="icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
+                <button className="icon-button" onClick={() => setSettingsOpen(false)} aria-label="Close"><X size={20} /></button>
               </div>
 
               <div className="role-presets-header">
@@ -968,7 +958,7 @@ function App() {
             <div className="modal-content">
               <div className="modal-titlebar">
                 <h2>Confirm Reset</h2>
-                <button className="icon-button" onClick={() => setResetConfirmOpen(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
+                <button className="icon-button" onClick={() => setResetConfirmOpen(false)} aria-label="Close"><X size={20} /></button>
               </div>
               
               <p style={{ margin: '16px 0', fontSize: '14px', lineHeight: '1.5' }}>

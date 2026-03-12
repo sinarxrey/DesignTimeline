@@ -1,10 +1,11 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import './index.css'
-import App from './App.jsx'
-import Landing from './pages/Landing.jsx'
+
+const App = lazy(() => import('./App.jsx'))
+const Landing = lazy(() => import('./pages/Landing.jsx'))
 
 const VISITED_APP_KEY = 'designtimeline-visited-app'
 
@@ -24,18 +25,20 @@ function PageTransition({ children }) {
 function AnimatedRoutes() {
   const location = useLocation()
   return (
-    <Routes location={location} key={location.pathname}>
-      <Route path="/" element={
-        <PageTransition>
-          <Landing />
-        </PageTransition>
-      } />
-      <Route path="/app" element={
-        <PageTransition>
-          <AppRoute />
-        </PageTransition>
-      } />
-    </Routes>
+    <Suspense fallback={<div className="page-transition" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <PageTransition>
+            <Landing />
+          </PageTransition>
+        } />
+        <Route path="/app" element={
+          <PageTransition>
+            <AppRoute />
+          </PageTransition>
+        } />
+      </Routes>
+    </Suspense>
   )
 }
 
