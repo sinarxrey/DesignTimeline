@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
@@ -88,6 +89,17 @@ function App() {
 
     loadPersistedState();
   }, []);
+
+  // Lock body scroll when any modal is open
+  const isModalOpen = showEditModal || showImportModal || settingsOpen || resetConfirmOpen;
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isModalOpen]);
 
   // Auto-save state when items change
   useEffect(() => {
@@ -604,7 +616,7 @@ function App() {
       )}
 
       {/* Edit Project Name Modal */}
-      {showEditModal && (
+      {showEditModal && createPortal(
         <div className="modal-backdrop" onClick={() => setShowEditModal(false)}>
           <div className="modal modal--compact" onClick={e => e.stopPropagation()}>
             <div className="modal-content">
@@ -631,11 +643,12 @@ function App() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Import Modal */}
-      {showImportModal && (
+      {showImportModal && createPortal(
         <div className="modal-backdrop" onClick={() => setShowImportModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-content">
@@ -662,7 +675,8 @@ function App() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Main Content - Only show after onboarding */}
@@ -844,7 +858,7 @@ function App() {
         <div className="trademark">Created by sinarxrey</div>
       </footer>
 
-      {settingsOpen && (
+      {settingsOpen && createPortal(
         <div className="modal-backdrop" onClick={() => setSettingsOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-content">
@@ -949,10 +963,11 @@ function App() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {resetConfirmOpen && (
+      {resetConfirmOpen && createPortal(
         <div className="modal-backdrop" onClick={() => setResetConfirmOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-content">
@@ -971,7 +986,8 @@ function App() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
         </div>
       )}
