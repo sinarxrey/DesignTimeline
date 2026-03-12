@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './App.css';
 import 'iconify-icon';
 import { saveState, loadState, clearState, exportData, importData, isStorageAvailable, getLastProject } from './utils/storage';
@@ -8,16 +9,17 @@ const ROLE_PRESETS = {
   middle: 2.4,
   junior: 3.2,
 };
+const DEFAULT_COMPLEXITY_OFFSETS = {
+  normal: 0.5,
+  quite: 1.0,
+  more: 2.0,
+};
 
 function App() {
   const [items, setItems] = useState([]);
   const [projectName, setProjectName] = useState('');
 
-  const [complexityMultipliers, setComplexityMultipliers] = useState({
-    normal: 0.5,
-    quite: 1,
-    more: 2,
-  });
+  const [complexityMultipliers, setComplexityMultipliers] = useState(DEFAULT_COMPLEXITY_OFFSETS);
 
   const [role, setRole] = useState('middle');
   const [hoursPerPage, setHoursPerPage] = useState(ROLE_PRESETS['middle']);
@@ -67,9 +69,11 @@ function App() {
           if (savedState.items) setItems(savedState.items);
           if (savedState.projectName) setProjectName(savedState.projectName);
           if (savedState.role) setRole(savedState.role);
-          if (savedState.hoursPerPage) setHoursPerPage(savedState.hoursPerPage);
-          if (savedState.hoursPerDay) setHoursPerDay(savedState.hoursPerDay);
-          if (savedState.complexityMultipliers) setComplexityMultipliers(savedState.complexityMultipliers);
+          if (savedState.hoursPerPage !== undefined) setHoursPerPage(savedState.hoursPerPage);
+          if (savedState.hoursPerDay !== undefined) setHoursPerDay(savedState.hoursPerDay);
+          if (savedState.complexityMultipliers) {
+            setComplexityMultipliers({ ...DEFAULT_COMPLEXITY_OFFSETS, ...savedState.complexityMultipliers });
+          }
           if (savedState.collapsedMainIds) setCollapsedMainIds(savedState.collapsedMainIds);
           
           // Set temp values for modals
@@ -146,12 +150,13 @@ function App() {
 
   const rowDurations = useMemo(() => {
     return items.map(i => {
-      const mult = complexityMultipliers[i.complexity] ?? 1;
-      const hours = (Number(i.estScreens || 0) + Number(mult || 0)) * Number(hoursPerPage || 0);
-      const days = hours / Number(hoursPerDay || 8);
+      // Complexity values are screen-equivalent offsets to keep zero-screen rows counted.
+      const complexityOffset = complexityMultipliers[i.complexity] ?? 0;
+      const estScreens = Number(i.estScreens || 0);
+      const days = (estScreens + complexityOffset) * pageTimeDays;
       return { id: i.id, days };
     });
-  }, [items, complexityMultipliers, hoursPerPage, hoursPerDay]);
+  }, [items, complexityMultipliers, pageTimeDays]);
 
   const totals = useMemo(() => {
     const totalDays = rowDurations.reduce((s, r) => s + r.days, 0);
@@ -475,9 +480,11 @@ function App() {
               setRole(savedState.role);
               setTempRole(savedState.role);
             }
-            if (savedState.hoursPerPage) setHoursPerPage(savedState.hoursPerPage);
-            if (savedState.hoursPerDay) setHoursPerDay(savedState.hoursPerDay);
-            if (savedState.complexityMultipliers) setComplexityMultipliers(savedState.complexityMultipliers);
+            if (savedState.hoursPerPage !== undefined) setHoursPerPage(savedState.hoursPerPage);
+            if (savedState.hoursPerDay !== undefined) setHoursPerDay(savedState.hoursPerDay);
+            if (savedState.complexityMultipliers) {
+              setComplexityMultipliers({ ...DEFAULT_COMPLEXITY_OFFSETS, ...savedState.complexityMultipliers });
+            }
             if (savedState.collapsedMainIds) setCollapsedMainIds(savedState.collapsedMainIds);
             
             setTempProjectName(savedState.projectName || '');
@@ -766,9 +773,11 @@ function App() {
                     type="number"
                     min="0"
                     step="1"
-                    value={item.estScreens}
-                    onChange={e => updateItem(item.id, { estScreens: Number(e.target.value) })}
+                    value={Number(item.estScreens ?? 0) === 0 ? '' : item.estScreens}
+                    placeholder="0"
+                    onChange={e => updateItem(item.id, { estScreens: e.target.value === '' ? 0 : Number(e.target.value) })}
                     onKeyDown={e => handleSelectKeyDown(e, item)}
+                    style={{ MozAppearance: 'textfield' }}
                   />
                 </div>
                 <div>
@@ -783,7 +792,7 @@ function App() {
                   </select>
                 </div>
                 <div>
-                  <div className="calc-value">{(row?.days ?? 0).toFixed(1)}</div>
+                  <div className="calc-value">{(row?.days ?? 0).toFixed(2)}</div>
                 </div>
                 <div>
                   <div className="row-actions">
@@ -883,7 +892,10 @@ function App() {
                 </label>
               </div>
 
-              <h3>Complexity multipliers</h3>
+              <h3>Complexity base offsets</h3>
+              <p className="hint" style={{ margin: '4px 0 8px 0' }}>
+                Used in estimation as screen-equivalent effort: <code>(Est. Screen + Complexity) * Page Time</code>
+              </p>
               <div className="grid complexities">
                 <label>
                   Normal
@@ -894,6 +906,7 @@ function App() {
                     value={complexityMultipliers.normal}
                     onChange={e => setComplexityMultipliers(m => ({ ...m, normal: Number(e.target.value) }))}
                   />
+                  <span className="hint" style={{ marginTop: '4px' }}>Default: 0.5</span>
                 </label>
                 <label>
                   Medium
@@ -904,6 +917,7 @@ function App() {
                     value={complexityMultipliers.quite}
                     onChange={e => setComplexityMultipliers(m => ({ ...m, quite: Number(e.target.value) }))}
                   />
+                  <span className="hint" style={{ marginTop: '4px' }}>Default: 1.0</span>
                 </label>
                 <label>
                   Hard
@@ -914,6 +928,7 @@ function App() {
                     value={complexityMultipliers.more}
                     onChange={e => setComplexityMultipliers(m => ({ ...m, more: Number(e.target.value) }))}
                   />
+                  <span className="hint" style={{ marginTop: '4px' }}>Default: 2.0</span>
                 </label>
               </div>
             </div>
@@ -944,6 +959,7 @@ function App() {
       )}
       </>
     )}
+    <SpeedInsights />
     </div>
   );
 }

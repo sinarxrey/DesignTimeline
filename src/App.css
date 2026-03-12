@@ -320,6 +320,17 @@ input[type="number"]::-webkit-outer-spin-button:hover {
   opacity: 1;
 }
 
+/* Remove Firefox number input styling */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Selection color */
 ::selection {
   background: rgba(77, 171, 247, 0.2);
