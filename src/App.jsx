@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import 'iconify-icon';
+import { saveState, loadState, clearState, exportData, importData, isStorageAvailable, getLastProject } from './utils/storage';
 
 const ROLE_PRESETS = {
   senior: 1.6, // hours per page
@@ -33,6 +34,11 @@ function App() {
   const [tempRole, setTempRole] = useState('middle');
   const [projectNameError, setProjectNameError] = useState(false);
 
+  // Persistence state
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState('');
+
   // #region agent log
   useEffect(() => {
     fetch('http://127.0.0.1:7553/ingest/8530902c-766f-4cb5-a54b-5f9db023ecef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ea1518'},body:JSON.stringify({sessionId:'ea1518',location:'App.jsx:34',message:'App mounted with onboarding state',data:{showOnboarding,tempProjectName,tempRole,projectName},timestamp:Date.now()})}).catch(()=>{});
@@ -42,6 +48,74 @@ function App() {
     fetch('http://127.0.0.1:7553/ingest/8530902c-766f-4cb5-a54b-5f9db023ecef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ea1518'},body:JSON.stringify({sessionId:'ea1518',location:'App.jsx:38',message:'Onboarding modal render check',data:{showOnboarding,hasProjectName: !!tempProjectName},timestamp:Date.now()})}).catch(()=>{});
   }, [showOnboarding, tempProjectName]);
   // #endregion
+
+  // Load state on mount (check for existing project data)
+  useEffect(() => {
+    const loadPersistedState = async () => {
+      // Check if localStorage is available
+      if (!isStorageAvailable()) {
+        console.warn('localStorage is not available, persistence disabled');
+        return;
+      }
+
+      // Try to load last active project
+      const lastProject = getLastProject();
+      if (lastProject) {
+        const savedState = loadState(lastProject);
+        if (savedState) {
+          // Restore all persisted state
+          if (savedState.items) setItems(savedState.items);
+          if (savedState.projectName) setProjectName(savedState.projectName);
+          if (savedState.role) setRole(savedState.role);
+          if (savedState.hoursPerPage) setHoursPerPage(savedState.hoursPerPage);
+          if (savedState.hoursPerDay) setHoursPerDay(savedState.hoursPerDay);
+          if (savedState.complexityMultipliers) setComplexityMultipliers(savedState.complexityMultipliers);
+          if (savedState.collapsedMainIds) setCollapsedMainIds(savedState.collapsedMainIds);
+          
+          // Set temp values for modals
+          setTempProjectName(savedState.projectName || '');
+          setTempRole(savedState.role || 'middle');
+          
+          // Hide onboarding if we have a project name
+          if (savedState.projectName) {
+            setShowOnboarding(false);
+          }
+          
+          setAutoSaveStatus('saved');
+        }
+      }
+    };
+
+    loadPersistedState();
+  }, []);
+
+  // Auto-save state when items change
+  useEffect(() => {
+    if (!projectName || showOnboarding) return;
+    
+    setAutoSaveStatus('saving');
+    const timeoutId = setTimeout(() => {
+      const stateToSave = {
+        items,
+        projectName,
+        role,
+        hoursPerPage,
+        hoursPerDay,
+        complexityMultipliers,
+        collapsedMainIds
+      };
+      
+      const success = saveState(projectName, stateToSave);
+      setAutoSaveStatus(success ? 'saved' : 'error');
+      
+      // Reset status after delay
+      if (success) {
+        setTimeout(() => setAutoSaveStatus('saved'), 2000);
+      }
+    }, 500); // Debounce saves
+    
+    return () => clearTimeout(timeoutId);
+  }, [items, projectName, role, hoursPerPage, hoursPerDay, complexityMultipliers, collapsedMainIds, showOnboarding]);
 
   useEffect(() => {
     if (!pendingFocusId) return;
@@ -331,6 +405,11 @@ function App() {
     setTempProjectName('');
     setTempRole('middle');
     setShowOnboarding(true);
+    
+    // Clear localStorage for current project
+    if (projectName) {
+      clearState(projectName);
+    }
   }
 
   // Onboarding handlers
@@ -356,6 +435,69 @@ function App() {
       setProjectName(tempProjectName);
       setShowEditModal(false);
     }
+  }
+
+  // Import/Export handlers
+  function handleExport() {
+    if (!projectName) return;
+    
+    const url = exportData(projectName);
+    if (url) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `design-timeline-${projectName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function handleFileImport(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importDataObj = JSON.parse(event.target.result);
+        const success = importData(importDataObj);
+        
+        if (success) {
+          // Reload the imported data
+          const importedProject = importDataObj.data.projectName;
+          const savedState = loadState(importedProject);
+          
+          if (savedState) {
+            if (savedState.items) setItems(savedState.items);
+            if (savedState.projectName) setProjectName(savedState.projectName);
+            if (savedState.role) {
+              setRole(savedState.role);
+              setTempRole(savedState.role);
+            }
+            if (savedState.hoursPerPage) setHoursPerPage(savedState.hoursPerPage);
+            if (savedState.hoursPerDay) setHoursPerDay(savedState.hoursPerDay);
+            if (savedState.complexityMultipliers) setComplexityMultipliers(savedState.complexityMultipliers);
+            if (savedState.collapsedMainIds) setCollapsedMainIds(savedState.collapsedMainIds);
+            
+            setTempProjectName(savedState.projectName || '');
+            setShowOnboarding(!savedState.projectName);
+            setAutoSaveStatus('saved');
+          }
+          
+          setShowImportModal(false);
+          setImportError('');
+        } else {
+          setImportError('Failed to import data. Please check the file format.');
+        }
+      } catch (error) {
+        setImportError('Invalid file format. Please select a valid backup file.');
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    e.target.value = '';
   }
 
   let currentMainCollapsed = false;
@@ -441,7 +583,7 @@ function App() {
       {/* Edit Project Name Modal */}
       {showEditModal && (
         <div className="modal-backdrop" onClick={() => setShowEditModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal modal--compact" onClick={e => e.stopPropagation()}>
             <div className="modal-content">
               <div className="modal-titlebar">
                 <h2>Edit Project Name</h2>
@@ -463,6 +605,37 @@ function App() {
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px' }}>
                 <button className="danger" onClick={() => setShowEditModal(false)}>Cancel</button>
                 <button onClick={handleSaveEdit}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="modal-backdrop" onClick={() => setShowImportModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-titlebar">
+                <h2>Import Backup</h2>
+                <button className="icon-button" onClick={() => setShowImportModal(false)} aria-label="Close"><iconify-icon icon="ri:close-line" width="20" height="20"></iconify-icon></button>
+              </div>
+
+              <label style={{ display: 'block', marginBottom: '20px' }}>
+                <span style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Select Backup File</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileImport}
+                  autoFocus
+                />
+                {importError && (
+                  <span className="error-message" style={{ marginTop: '8px', display: 'block' }}>{importError}</span>
+                )}
+              </label>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button onClick={() => setShowImportModal(false)}>Cancel</button>
               </div>
             </div>
           </div>
@@ -507,12 +680,33 @@ function App() {
       </header>
 
       <section className="summary summary--compact">
-        <span className="summary-label">Summary</span>
-        <span className="summary-stat">{hoursPerPage.toFixed(1)} Hour/page</span>
-        <span className="summary-sep" aria-hidden>•</span>
-        <span className="summary-stat">{totals.totalHours.toFixed(1)} Hour</span>
-        <span className="summary-sep" aria-hidden>•</span>
-        <span className="summary-stat">{totals.totalDays.toFixed(1)} Day</span>
+        <div className="summary-left">
+          <span className="summary-label">Summary</span>
+          <span className="summary-stat">{hoursPerPage.toFixed(1)} Hour/page</span>
+          <span className="summary-sep" aria-hidden>•</span>
+          <span className="summary-stat">{totals.totalHours.toFixed(1)} Hour</span>
+          <span className="summary-sep" aria-hidden>•</span>
+          <span className="summary-stat">{totals.totalDays.toFixed(1)} Day</span>
+        </div>
+        <div className="summary-actions">
+          <button 
+            className="icon-button icon-button--bare" 
+            onClick={handleExport} 
+            aria-label="Export data" 
+            title="Export data as backup"
+            disabled={!projectName}
+          >
+            <iconify-icon icon="ri:download-cloud-2-line" width="18" height="18"></iconify-icon>
+          </button>
+          <button 
+            className="icon-button icon-button--bare" 
+            onClick={() => setShowImportModal(true)} 
+            aria-label="Import data" 
+            title="Import from backup"
+          >
+            <iconify-icon icon="ri:upload-cloud-2-line" width="18" height="18"></iconify-icon>
+          </button>
+        </div>
       </section>
 
       <section className="items">
@@ -543,8 +737,8 @@ function App() {
           {items.length === 0 && (
             <div className="empty-state-placeholder">
               <iconify-icon icon="ri:file-add-line" width="48" height="48" className="placeholder-icon"></iconify-icon>
-              <p>Start by adding pages to calculate your design timeline</p>
-              <span className="placeholder-hint">Click "New Page" above to add Main or Sub Pages, then fill in details</span>
+              <p>Add pages to build your timeline</p>
+              <span className="placeholder-hint">Click ‘New Page’ to add main or sub pages, then enter the details.</span>
             </div>
           )}
           {items.map((item, idx) => {
