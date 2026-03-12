@@ -100,6 +100,27 @@ export function clearState(projectName) {
 }
 
 /**
+ * Clear all Design Timeline storage (metadata and all projects)
+ * @returns {boolean} Success status
+ */
+export function clearAllStorage() {
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    return true;
+  } catch (error) {
+    console.error('Failed to clear all storage:', error);
+    return false;
+  }
+}
+
+/**
  * Export all data to JSON file
  * @param {string} projectName - Current project name
  * @returns {string} Download URL

@@ -1,9 +1,12 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import './App.css';
 import 'iconify-icon';
-import { saveState, loadState, clearState, exportData, importData, isStorageAvailable, getLastProject } from './utils/storage';
+import { saveState, loadState, clearState, clearAllStorage, exportData, importData, isStorageAvailable, getLastProject } from './utils/storage';
+
+const VISITED_APP_KEY = 'designtimeline-visited-app';
 
 const ROLE_PRESETS = {
   senior: 1.6, // hours per page
@@ -17,6 +20,7 @@ const DEFAULT_COMPLEXITY_OFFSETS = {
 };
 
 function App() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [projectName, setProjectName] = useState('');
 
@@ -32,6 +36,7 @@ function App() {
   
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [onboardingExiting, setOnboardingExiting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [tempProjectName, setTempProjectName] = useState('');
   const [tempRole, setTempRole] = useState('middle');
@@ -410,12 +415,21 @@ function App() {
     setShowEditModal(false);
     setTempProjectName('');
     setTempRole('middle');
+    setOnboardingExiting(false);
     setShowOnboarding(true);
     
     // Clear localStorage for current project
     if (projectName) {
       clearState(projectName);
     }
+  }
+
+  function handleBackToLanding() {
+    try {
+      localStorage.removeItem(VISITED_APP_KEY);
+      clearAllStorage();
+    } catch {}
+    navigate('/', { replace: true });
   }
 
   // Onboarding handlers
@@ -428,7 +442,14 @@ function App() {
     setProjectName(tempProjectName);
     setRole(tempRole);
     setHoursPerPage(ROLE_PRESETS[tempRole]);
+    setOnboardingExiting(true);
     setShowOnboarding(false);
+  }
+
+  function handleOnboardingAnimationEnd() {
+    if (onboardingExiting) {
+      setOnboardingExiting(false);
+    }
   }
 
   function handleEditProject() {
@@ -524,8 +545,11 @@ function App() {
   return (
     <div className="container">
       {/* Onboarding - Centered Page */}
-      {showOnboarding && (
-        <div className="onboarding-container">
+      {(showOnboarding || onboardingExiting) && (
+        <div
+          className={`onboarding-container ${onboardingExiting ? 'onboarding-exiting' : ''}`}
+          onAnimationEnd={handleOnboardingAnimationEnd}
+        >
           <div className="onboarding-card">
             <div className="onboarding-header">
               <h1>Design Timeline Calculator</h1>
@@ -582,6 +606,7 @@ function App() {
             </div>
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px' }}>
+              <button className="secondary" onClick={handleBackToLanding}>Back to Landing</button>
               <button onClick={handleStartProject}>Start</button>
             </div>
           </div>
@@ -652,7 +677,7 @@ function App() {
 
       {/* Main Content - Only show after onboarding */}
       {!showOnboarding && (
-        <>
+        <div className="main-app-enter">
       <header className="page-header">
         <div className="title">
           <h1>Design Timeline</h1>
@@ -958,8 +983,8 @@ function App() {
           </div>
         </div>
       )}
-      </>
-    )}
+        </div>
+      )}
     <SpeedInsights />
     <Analytics />
     </div>

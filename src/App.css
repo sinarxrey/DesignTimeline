@@ -33,6 +33,7 @@ body {
 }
 
 .container {
+  position: relative;
   width: 100%;
   max-width: none;
   margin: 0;
@@ -439,6 +440,11 @@ button.danger {
   background: var(--danger);
   color: white;
 }
+button.secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
 button:hover { 
   background: var(--accent-hover); 
   transform: translateY(-1px);
@@ -449,6 +455,10 @@ button.danger:hover {
   background: #e03131;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+button.secondary:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-tertiary);
 }
 button:focus-visible {
   outline: none;
@@ -830,6 +840,40 @@ section h3,
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
+}
+
+.onboarding-container.onboarding-exiting {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  animation: onboardingFadeOut 0.35s ease-out forwards;
+}
+
+@keyframes onboardingFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.main-app-enter {
+  animation: mainAppFadeIn 0.4s ease-out forwards;
+}
+
+@keyframes mainAppFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .onboarding-card {
