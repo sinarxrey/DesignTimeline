@@ -172,6 +172,10 @@ function App() {
     return { totalDays, totalHours };
   }, [rowDurations, hoursPerDay]);
 
+  const totalScreens = useMemo(() => {
+    return items.reduce((sum, i) => sum + Number(i.estScreens || 0), 0);
+  }, [items]);
+
   // Helper: check if current hoursPerPage matches a given role preset
   function roleMatchesPreset(r) {
     const preset = ROLE_PRESETS[r];
@@ -185,6 +189,7 @@ function App() {
       ...prev,
       { id, type, name: type === 'Main' ? 'Main Page' : 'Sub Page', estScreens: defaultScreens, complexity: 'normal' },
     ]);
+    setPendingFocusId(id);
   }
 
   function addChildAfter(mainId) {
@@ -243,48 +248,33 @@ function App() {
   }
 
   function handleNameKeyDown(e, item) {
-    // Shift+Delete: delete only Sub rows, then focus previous Sub (fallback previous Main)
+    // Shift+Delete: delete any row (Main or Sub), then focus previous item
     if (e.shiftKey && (e.key === 'Delete' || e.key === 'Backspace')) {
-      if (item.type === 'Sub') {
-        e.preventDefault();
-        const idx = items.findIndex(i => i.id === item.id);
-        let focusId = null;
-        let parentMainId = null;
-        // Find previous Sub above
-        for (let j = idx - 1; j >= 0; j--) {
-          if (items[j].type === 'Sub') {
-            focusId = items[j].id;
-            // Find its parent Main to ensure expanded
-            for (let k = j; k >= 0; k--) {
-              if (items[k].type === 'Main') { parentMainId = items[k].id; break; }
-            }
-            break;
-          }
-        }
-        // Fallback to nearest previous Main
-        if (!focusId) {
-          for (let j = idx - 1; j >= 0; j--) {
-            if (items[j].type === 'Main') { focusId = items[j].id; break; }
-          }
-        }
-        // Ensure parent of focus Sub is expanded
-        if (parentMainId) {
-          setCollapsedMainIds(cm => ({ ...cm, [parentMainId]: false }));
-        }
-        removeItem(item.id);
-        if (focusId) {
-          setPendingFocusId(focusId);
-        } else {
-          const nextId = items[idx + 1]?.id;
-          if (nextId) setPendingFocusId(nextId);
-        }
+      e.preventDefault();
+      const idx = items.findIndex(i => i.id === item.id);
+      let focusId = null;
+      
+      // Find previous item to focus
+      if (idx > 0) {
+        focusId = items[idx - 1].id;
+      }
+      
+      removeItem(item.id);
+      
+      // Focus the previous item if exists, otherwise next item
+      if (focusId) {
+        setPendingFocusId(focusId);
+      } else {
+        const nextId = items[idx + 1]?.id;
+        if (nextId) setPendingFocusId(nextId);
       }
       return;
     }
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (e.shiftKey && item.type === 'Sub') {
+      if (e.shiftKey) {
+        // Shift+Enter: create new Main Page (for both Main and Sub items)
         addMainAfter(item.id);
         return;
       }
@@ -360,38 +350,62 @@ function App() {
       </tr>`;
     }).join('');
 
+    const projectNameHtml = projectName ? `<div class="project-name">${escapeHtml(projectName)}</div>` : '';
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${projectName ? `${escapeHtml(projectName)} - Design Timeline` : 'Design Timeline'}</title>
       <style>
         body { font-family: 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color: #212529; background: #fff; padding: 32px; }
-        h1 { margin: 0 0 16px; font-size: 24px; font-weight: 600; color: #212529; }
-        .print-title { margin-bottom: 24px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; color: #212529; }
+        .print-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 24px; }
+        .print-title-section { flex: 1; min-width: 200px; }
+        .project-name { font-size: 18px; font-weight: 600; color: #212529; margin-top: 4px; }
+        .print-summary-box { 
+          background: #f8f9fa; 
+          border: 1px solid #e9ecef; 
+          border-radius: 6px; 
+          padding: 12px; 
+          min-width: 300px; 
+          display: flex; 
+          flex-wrap: wrap; 
+          gap: 8px; 
+          align-items: center; 
+        }
+        .print-summary-box .label { color: #6c757d; font-weight: 500; font-size: 14px; }
+        .print-summary-box .stat { font-weight: 600; color: #212529; font-size: 14px; }
+        .print-summary-box .sep { color: #adb5bd; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #e9ecef; padding: 12px; font-size: 13px; }
         th { background: #f8f9fa; text-align: left; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
         tfoot td { font-weight: 600; }
-        .print-summary { margin-top: 24px; display: flex; align-items: center; gap: 12px; font-size: 14px; }
-        .print-summary .label { color: #6c757d; font-weight: 500; }
-        .print-summary .stat { font-weight: 600; color: #212529; }
-        .print-summary .sep { color: #adb5bd; }
         @media print { body { padding: 0; } .no-print { display: none; } }
+        @media (max-width: 768px) {
+          .print-header { flex-direction: column; gap: 16px; }
+          .print-summary-box { min-width: auto; width: 100%; }
+        }
       </style>
       </head><body>
-        <div class="print-title">Design Timeline${projectName ? `<br>${escapeHtml(projectName)}` : ''}</div>
+        <div class="print-header">
+          <div class="print-title-section">
+            <h1>Design Timeline</h1>
+            ${projectNameHtml}
+          </div>
+          <div class="print-summary-box">
+            <span class="label">Summary</span>
+            <span class="stat">${hoursPerPage.toFixed(1)} h/page</span>
+            <span class="sep">•</span>
+            <span class="stat">${totals.totalHours.toFixed(1)} h</span>
+            <span class="sep">•</span>
+            <span class="stat">${totals.totalDays.toFixed(1)} d</span>
+            <span class="sep">•</span>
+            <span class="stat">${totalScreens} Screens</span>
+          </div>
+        </div>
         <table>
           <thead>
             <tr><th>Type</th><th>Name</th><th>Est. Screen</th><th>Complexity</th><th>Est. Duration (Days)</th></tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
         </table>
-        <div class="print-summary">
-          <span class="label">Summary</span>
-          <span class="stat">${hoursPerPage.toFixed(1)} h/page</span>
-          <span class="sep">•</span>
-          <span class="stat">${totals.totalHours.toFixed(1)} h</span>
-          <span class="sep">•</span>
-          <span class="stat">${totals.totalDays.toFixed(1)} d</span>
-        </div>
       </body></html>`;
 
     const w = window.open('', '_blank');
@@ -721,9 +735,11 @@ function App() {
           <span className="summary-label">Summary</span>
           <span className="summary-stat">{hoursPerPage.toFixed(1)} Hour/page</span>
           <span className="summary-sep" aria-hidden>•</span>
-          <span className="summary-stat">{totals.totalHours.toFixed(1)} Hour</span>
+          <span className="summary-stat">{totals.totalHours.toFixed(1)} Hours</span>
           <span className="summary-sep" aria-hidden>•</span>
-          <span className="summary-stat">{totals.totalDays.toFixed(1)} Day</span>
+          <span className="summary-stat">{totals.totalDays.toFixed(1)} Days</span>
+          <span className="summary-sep" aria-hidden>•</span>
+          <span className="summary-stat">{totalScreens} Screens</span>
         </div>
         <div className="summary-actions">
           <button 
